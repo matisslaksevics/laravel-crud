@@ -15,9 +15,12 @@ class UserController extends Controller
         ]);
         if (auth()->attempt(['name' => $requestedInfo['loginname'], 'password' => $requestedInfo['loginpassword']])) {
             $request->session()->regenerate();
-        }
 
-        return redirect('/');
+            if (auth()->user()->role === 'admin') {
+                return redirect('/admin-view');
+            }
+            return redirect('/');
+        }
     }
     public function logout(){
         auth()->logout();
@@ -31,6 +34,7 @@ class UserController extends Controller
         ]);
 
         $requestedInfo['password'] = bcrypt($requestedInfo['password']);
+        $requestedInfo['role'] = 'user';
         $user = User::create($requestedInfo);
 
         auth()->login($user);
