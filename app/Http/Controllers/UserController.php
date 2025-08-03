@@ -4,19 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    public function login(Request $request){
+        $requestedInfo = $request->validate([
+            'loginname' => 'required',
+            'loginpassword' => 'required'
+        ]);
+        if (auth()->attempt(['name' => $requestedInfo['loginname'], 'password' => $requestedInfo['loginpassword']])) {
+            $request->session()->regenerate();
+        }
+
+        return redirect('/');
+    }
+    public function logout(){
+        auth()->logout();
+        return redirect('/');
+    }
     public function register(Request $request) {
         $requestedInfo = $request->validate([
-            'name' => ['required', 'min:3', 'max:10'],
-            'email' => ['required', 'email'],
+            'name' => ['required', 'min:3', 'max:10', Rule::unique('users', 'name')],
+            'email' => ['required', 'email', Rule::unique('users', 'email')],
             'password' => ['required', 'min:8', 'max:200']
         ]);
 
         $requestedInfo['password'] = bcrypt($requestedInfo['password']);
-        User::create($requestedInfo);
+        $user = User::create($requestedInfo);
 
-        return 'Hello from controller!';
+        auth()->login($user);
+        return redirect('/');
     }
 }
